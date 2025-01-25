@@ -20,14 +20,13 @@ RUN ollama pull llama3.1:8b
 # working directory
 WORKDIR /
 
-
 COPY requirements.txt .
 RUN pip3 install --no-cache-dir -r requirements.txt
 
 COPY streamlit_llm.py .
 
 # Тук създаваме едини баш файл, който да се екзекютва при билд на имиджа
-# тук попълваме порта, на който ексползваме нашия апп
+# попълваме порта, на който ексползваме нашия апп
 RUN echo '#!/bin/bash\n\
 OLLAMA_HOST=0.0.0.0 ollama serve &\n\
 sleep 5\n\
