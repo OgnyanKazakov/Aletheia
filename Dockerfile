@@ -15,7 +15,7 @@ RUN OLLLAMA_HOST=0.0.0.0 ollama serve
 RUN sleep 5
 
 # тук трябва да добавите модела, който искате
-RUN ollama pull llama3.1:8b
+RUN ollama pull gemma3:4b
 
 # working directory
 WORKDIR /
