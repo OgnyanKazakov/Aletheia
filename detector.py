@@ -1,6 +1,8 @@
-import requests
 import json
-import argparse
+import requests
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
 
 def analyze_propaganda(text, model="llama3", host="http://localhost:11434"):
     """
@@ -58,7 +60,6 @@ def analyze_propaganda(text, model="llama3", host="http://localhost:11434"):
         result = response.json()
         
         # Extract the model's analysis from the response
-        # Note: The format depends on the model's output structure
         try:
             # Try to parse the response as JSON
             analysis = json.loads(result["response"])
@@ -69,53 +70,55 @@ def analyze_propaganda(text, model="llama3", host="http://localhost:11434"):
                 "note": "Model did not return JSON. Consider parsing the raw analysis manually."
             }
         
-        return analysis
+        return analysis, 200
     
     except requests.exceptions.RequestException as e:
-        return {"error": str(e), "status": "failed"}
+        return {"error": str(e), "status": "failed"}, 500
 
-def main():
-    # Set up command line argument parsing
-    parser = argparse.ArgumentParser(description="Analyze news for propaganda using Ollama")
-    parser.add_argument("--text", type=str, help="News text to analyze")
-    parser.add_argument("--file", type=str, help="Path to file containing news text")
-    parser.add_argument("--model", type=str, default="llama3", help="Ollama model to use")
-    parser.add_argument("--host", type=str, default="http://localhost:11434", help="Ollama API host address")
+@app.route('/analyze', methods=['POST'])
+def analyze_endpoint():
+    """
+    API endpoint to analyze news content for propaganda
+    
+    Expected JSON payload:
+    {
+        "text": "News content to analyze",
+        "model": "llama3",  # optional
+        "ollama_host": "http://localhost:11434"  # optional
+    }
+    """
+    if not request.is_json:
+        return jsonify({"error": "Request must be JSON"}), 400
+    
+    data = request.get_json()
+    
+    # Check if text is provided
+    if 'text' not in data or not data['text']:
+        return jsonify({"error": "No text provided for analysis"}), 400
+    
+    # Get optional parameters with defaults
+    model = data.get('model', 'llama3')
+    host = data.get('ollama_host', 'http://localhost:11434')
+    
+    # Analyze the text
+    result, status_code = analyze_propaganda(data['text'], model=model, host=host)
+    
+    return jsonify(result), status_code
+
+@app.route('/health', methods=['GET'])
+def health_check():
+    """Simple health check endpoint"""
+    return jsonify({"status": "ok"}), 200
+
+if __name__ == "__main__":
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="Run the propaganda analysis API server")
+    parser.add_argument("--host", type=str, default="0.0.0.0", help="Host to bind the server to")
+    parser.add_argument("--port", type=int, default=5000, help="Port to bind the server to")
+    parser.add_argument("--debug", action="store_true", help="Run in debug mode")
     
     args = parser.parse_args()
     
-    # Get the text to analyze
-    if args.text:
-        text = args.text
-    elif args.file:
-        try:
-            with open(args.file, 'r', encoding='utf-8') as f:
-                text = f.read()
-        except FileNotFoundError:
-            print(f"Error: File '{args.file}' not found")
-            return
-    else:
-        # Interactive mode
-        print("Enter the news text to analyze (type 'EOF' on a new line when finished):")
-        lines = []
-        while True:
-            line = input()
-            if line == "EOF":
-                break
-            lines.append(line)
-        text = "\n".join(lines)
-    
-    if not text:
-        print("Error: No text provided for analysis")
-        return
-    
-    # Analyze the text
-    print(f"Analyzing with {args.model}...")
-    result = analyze_propaganda(text, model=args.model, host=args.host)
-    
-    # Print the results
-    print("\n===== PROPAGANDA ANALYSIS RESULTS =====\n")
-    print(json.dumps(result, indent=2))
-
-if __name__ == "__main__":
-    main()
+    print(f"Starting propaganda analysis API server on {args.host}:{args.port}")
+    app.run(host=args.host, port=args.port, debug=args.debug)
