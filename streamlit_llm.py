@@ -2,7 +2,7 @@ import streamlit as st
 import ollama
 from langchain_community.llms import Ollama
 
-def initialize_model(model_name="llama3.1:8b"):
+def initialize_model(model_name="gemma3:4b"):
     "Initialize the code nodel"""
 
     return Ollama(nodel=model_name)
