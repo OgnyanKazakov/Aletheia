@@ -4,7 +4,7 @@ from flask import Flask, request, jsonify
 
 app = Flask(__name__)
 
-def analyze_propaganda(text, model="llama3", host="http://localhost:11434"):
+def analyze_propaganda(text, model="gemma3", host="http://localhost:11434"):
     """
     Send text to an Ollama model to analyze if it contains propaganda.
     
@@ -83,7 +83,7 @@ def analyze_endpoint():
     Expected JSON payload:
     {
         "text": "News content to analyze",
-        "model": "llama3",  # optional
+        "model": "gemma3",  # optional
         "ollama_host": "http://localhost:11434"  # optional
     }
     """
@@ -97,7 +97,7 @@ def analyze_endpoint():
         return jsonify({"error": "No text provided for analysis"}), 400
     
     # Get optional parameters with defaults
-    model = data.get('model', 'llama3')
+    model = data.get('model', 'gemma3')
     host = data.get('ollama_host', 'http://localhost:11434')
     
     # Analyze the text
